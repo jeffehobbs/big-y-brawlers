@@ -49,6 +49,14 @@ const ENEMIES = {
               loot:["candy","pizza","clamato","chicken","coupon"] },
 };
 
+/* difficulty tuning (balance simulated headlessly; see README) */
+const ENEMY_TUNE = { hp: 1.7, atk: 1.45, bossHp: 1.55, bossAtk: 1.15 };
+for (const id in ENEMIES){
+  const e = ENEMIES[id];
+  e.hp = Math.round(e.hp * (e.boss ? ENEMY_TUNE.bossHp : ENEMY_TUNE.hp));
+  e.atk = Math.round(e.atk * (e.boss ? ENEMY_TUNE.bossAtk : ENEMY_TUNE.atk));
+}
+
 const ITEMS = {
   apple:   { name:"APPLE",        kind:"heal",   v:12,  desc:"RESTORE 12 HP" },
   banana:  { name:"BANANA",       kind:"heal",   v:8,   desc:"RESTORE 8 HP" },
@@ -70,7 +78,7 @@ const ITEMS = {
 const NPC_INFO = {
   sedona: { pos:[38,10],  title:"SELF-CHECKOUT ATTENDANT" },
   calvin: { pos:[18,4],  title:"STORE MANAGER" },
-  corey:  { pos:[30,34], title:"ASSISTANT MANAGER" },
+  corey:  { pos:[35,36], title:"ASSISTANT MANAGER" },
 };
 
 /* Dialogue: [npc, playerCharId] -> array of lines */
