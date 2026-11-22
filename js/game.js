@@ -157,10 +157,10 @@ function updateExplore(dt, t){
   /* movement */
   let dx = 0, dy = 0;
   const k = GAME.keys;
-  if (k["arrowleft"] || k["a"]) dx -= 1;
-  if (k["arrowright"] || k["d"]) dx += 1;
-  if (k["arrowup"] || k["w"]) dy -= 1;
-  if (k["arrowdown"] || k["s"]) dy += 1;
+  if (k["left"] || k["arrowleft"] || k["a"]) dx -= 1;
+  if (k["right"] || k["arrowright"] || k["d"]) dx += 1;
+  if (k["up"] || k["arrowup"] || k["w"]) dy -= 1;
+  if (k["down"] || k["arrowdown"] || k["s"]) dy += 1;
   P.moving = !!(dx || dy);
   if (P.moving){
     const len = Math.hypot(dx, dy);
