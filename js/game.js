@@ -250,7 +250,12 @@ function updateExplore(dt, t){
       const z = ZONES.find(z => z.id === p.zone);
       const left = z.picks.length - (GAME.zoneCollected[p.zone] || 0);
       AudioFX.play("pickup");
-      toast("BAGGED " + ITEMS[p.item].name + "  (" + collectedCount() + "/" + TOTAL_PICKS + ")", 2.0);
+      const it = ITEMS[p.item];
+      const hpGain = (it.kind === "heal") ? Math.ceil(it.v / 2) : (it.kind === "both" ? 6 : 4);
+      const before = P.hp;
+      P.hp = Math.min(P.maxHp, P.hp + hpGain);
+      const got = Math.round(P.hp - before);
+      toast("BAGGED " + it.name + (got > 0 ? "  +" + got + " HP" : "") + "  (" + collectedCount() + "/" + TOTAL_PICKS + ")", 2.0);
       if (left === 0){
         GAME.zoneDone[p.zone] = true;
         toast(z.name + " RESTOCKED!", 3.0);
