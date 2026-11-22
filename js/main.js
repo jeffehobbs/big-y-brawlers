@@ -48,6 +48,7 @@ const UI = { sel: 0, t: 0, introI: 0, bagSel: 0, bag: false, paused: false };
 const CHAR_IDS = ["sedona", "calvin", "corey"];
 
 function goTitle(){
+  UI.paused = false; UI.bag = false;
   GAME.state = "TITLE";
   try { GAME.hasSave = !!localStorage.getItem("bigy_brawlers_save"); } catch (e){ GAME.hasSave = false; }
   Music.start();
@@ -81,15 +82,28 @@ window.addEventListener("keydown", e => {
   handleKey(k);
 });
 window.addEventListener("keyup", e => { GAME.keys[normKey(e)] = false; });
-window.addEventListener("blur", () => { GAME.keys = {}; });
+window.addEventListener("blur", () => {
+  GAME.keys = {};
+  if (GAME.state === "EXPLORE" && !GAME.dialog || (GAME.state === "BATTLE" && Combat.turn === "player" && Combat.subMenu < 0 && !Combat.over)) pauseGame();
+});
 canvas.addEventListener("pointerdown", () => {
   AudioFX.ensure();
   if (GAME.state === "TITLE" || GAME.state === "SELECT") Music.start();
   if (GAME.state === "TITLE") handleKey("enter");
 });
 
+function pauseGame(){
+  if (UI.paused) return;
+  UI.paused = true; GAME.keys = {};
+  AudioFX.play("talk");
+}
 function handleKey(k){
   const confirm = (k === "z" || k === "enter");
+  if (UI.paused){
+    if (k === "escape" || k === "p" || confirm){ UI.paused = false; AudioFX.play("talk"); }
+    else if (k === "q"){ UI.paused = false; if (GAME.state === "EXPLORE") saveGame(); goTitle(); }
+    return;
+  }
   switch (GAME.state){
     case "TITLE":
       if (k === "c" && GAME.hasSave){
@@ -127,8 +141,10 @@ function handleKey(k){
       }
       if (confirm && GAME.nearNpc) startTalk(GAME.nearNpc);
       else if (k === "i" || k === "b"){ UI.bag = true; UI.bagSel = 0; }
+      else if (k === "escape" || k === "p") pauseGame();
       break;
     case "BATTLE":
+      if ((k === "escape" || k === "p") && Combat.turn === "player" && Combat.subMenu < 0 && !Combat.over){ pauseGame(); break; }
       Combat.handleKey(k);
       break;
     case "GAMEOVER":
@@ -342,6 +358,27 @@ function renderVictory(g, t){
   if (Math.floor(t * 2) % 2 === 0) drawTextC(g, "Z: PLAY AGAIN", VIEW_W / 2, 430, 2, "#ffd700", "#000");
 }
 
+function renderPause(g, t){
+  g.fillStyle = "rgba(0,0,0,0.7)"; g.fillRect(0, 0, VIEW_W, VIEW_H);
+  const bx = 220, by = 110, bw = 360, bh = 290;
+  g.fillStyle = "#16161c"; g.fillRect(bx, by, bw, bh);
+  g.fillStyle = "#c40d3c"; g.fillRect(bx, by, bw, 4);
+  g.fillStyle = "#222"; g.fillRect(bx, by + bh - 3, bw, 3);
+  drawTextC(g, "PAUSED", VIEW_W / 2, by + 24, 4, "#ffd700", "#5a0518");
+  const rows = [["ESC / Z", "RESUME"], ["Q", "QUIT TO TITLE"], ["M", AudioFX.muted ? "UNMUTE" : "MUTE"]];
+  rows.forEach(([k, v], i) => {
+    drawText(g, k, bx + 40, by + 90 + i * 24, 1, "#ffd700");
+    drawText(g, v, bx + 150, by + 90 + i * 24, 1, "#fff");
+  });
+  g.fillStyle = "#2a2a34"; g.fillRect(bx + 24, by + 170, bw - 48, 2);
+  const help = [["WASD / ARROWS", "MOVE"], ["Z / ENTER", "TALK, CONFIRM"], ["I", "BAG"], ["X", "BACK"]];
+  help.forEach(([k, v], i) => {
+    drawText(g, k, bx + 40, by + 188 + i * 18, 1, "#9ad");
+    drawText(g, v, bx + 190, by + 188 + i * 18, 1, "#ccc");
+  });
+  if (GAME.state === "EXPLORE") drawTextC(g, "QUITTING SAVES YOUR PROGRESS", VIEW_W / 2, by + bh - 20, 1, "#777");
+}
+
 /* ---------- main loop ---------- */
 let last = performance.now(), clock = 0;
 function frame(now){
@@ -354,10 +391,13 @@ function frame(now){
     case "SELECT":  renderSelect(g, clock); break;
     case "INTRO":   renderIntro(g, clock); break;
     case "EXPLORE":
-      if (!UI.bag) updateExplore(dt, clock);
-      if (GAME.state === "EXPLORE") { renderExplore(g, clock); if (UI.bag) renderBag(g); }
+      if (!UI.bag && !UI.paused) updateExplore(dt, clock);
+      if (GAME.state === "EXPLORE"){ renderExplore(g, clock); if (UI.bag) renderBag(g); if (UI.paused) renderPause(g, clock); }
       break;
-    case "BATTLE":  Combat.update(dt); if (GAME.state === "BATTLE") Combat.render(g, clock); break;
+    case "BATTLE":
+      if (!UI.paused) Combat.update(dt);
+      if (GAME.state === "BATTLE"){ Combat.render(g, clock); if (UI.paused) renderPause(g, clock); }
+      break;
     case "GAMEOVER": renderGameOver(g, clock); break;
     case "VICTORY":  renderVictory(g, clock); break;
   }
