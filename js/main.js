@@ -9,33 +9,35 @@ g.imageSmoothingEnabled = false;
 const splashImg = new Image();
 splashImg.src = "img/splash.png";
 
+const MUSIC_LOUD = 0.8, MUSIC_SOFT = 0.07;
 const Music = {
   el: null,
   started: false,
-  fading: false,
+  target: MUSIC_LOUD,
   init(){
     this.el = new Audio("audio/soundtrack.mp3");
     this.el.loop = true;
-    this.el.volume = 0.8;
+    this.el.volume = MUSIC_LOUD;
     this.el.preload = "auto";
   },
   /* browsers block autoplay until a gesture; try now, retry on first input */
   start(){
     if (!this.el) this.init();
+    this.target = MUSIC_LOUD;
     if (this.started && !this.el.paused) return;
-    this.fading = false;
-    this.el.volume = 0.8;
     const p = this.el.play();
     if (p && p.then) p.then(() => { this.started = true; }).catch(() => { this.started = false; });
   },
-  fadeOut(){ this.fading = true; },
+  /* during gameplay the soundtrack keeps going, very quietly */
+  soft(){
+    if (this.el && this.el.paused) this.start();
+    this.target = MUSIC_SOFT;
+  },
   update(dt){
     if (!this.el) return;
     this.el.muted = AudioFX.muted;
-    if (this.fading){
-      this.el.volume = Math.max(0, this.el.volume - dt * 0.8);
-      if (this.el.volume <= 0.001){ this.el.pause(); this.el.currentTime = 0; this.fading = false; this.started = false; }
-    }
+    const v = this.el.volume, d = this.target - v;
+    if (Math.abs(d) > 0.002) this.el.volume = Math.max(0, Math.min(1, v + Math.sign(d) * Math.min(Math.abs(d), dt * 0.5)));
   },
 };
 Music.init();
@@ -56,7 +58,7 @@ function beginNew(charId){
   GAME.state = "INTRO";
   UI.introI = 0;
   GAME.intro = introScript(GAME.player);
-  Music.fadeOut();
+  Music.soft();
 }
 
 /* ---------- input ---------- */
@@ -82,7 +84,7 @@ window.addEventListener("keyup", e => { GAME.keys[normKey(e)] = false; });
 window.addEventListener("blur", () => { GAME.keys = {}; });
 canvas.addEventListener("pointerdown", () => {
   AudioFX.ensure();
-  Music.start();
+  if (GAME.state === "TITLE" || GAME.state === "SELECT") Music.start();
   if (GAME.state === "TITLE") handleKey("enter");
 });
 
@@ -91,7 +93,7 @@ function handleKey(k){
   switch (GAME.state){
     case "TITLE":
       if (k === "c" && GAME.hasSave){
-        if (loadGame()){ GAME.state = "EXPLORE"; Music.fadeOut(); AudioFX.play("door"); }
+        if (loadGame()){ GAME.state = "EXPLORE"; Music.soft(); AudioFX.play("door"); }
         return;
       }
       GAME.state = "SELECT"; UI.sel = 0; AudioFX.play("pickup");
@@ -100,7 +102,7 @@ function handleKey(k){
       if (k === "left") UI.sel = (UI.sel + 2) % 3;
       else if (k === "right") UI.sel = (UI.sel + 1) % 3;
       else if (k === "1" || k === "2" || k === "3") UI.sel = +k - 1;
-      else if (k === "c" && GAME.hasSave){ if (loadGame()){ GAME.state = "EXPLORE"; Music.fadeOut(); } }
+      else if (k === "c" && GAME.hasSave){ if (loadGame()){ GAME.state = "EXPLORE"; Music.soft(); } }
       else if (confirm){ AudioFX.play("door"); beginNew(CHAR_IDS[UI.sel]); }
       else if (k === "escape" || k === "x") GAME.state = "TITLE";
       if (k === "left" || k === "right") AudioFX.play("talk");
