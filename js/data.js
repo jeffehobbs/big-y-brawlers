@@ -95,7 +95,7 @@ function getDialogue(npc, player){
     ],
     sedona: [
       ["Hey! I'm at lane 12 — the self-checkout. 'Item not recognized'? THAT'S YOU.",
-       "Let me scan your wounds real quick. (+20 HP)",
+       "Let me scan your wounds real quick. (FULL HP)",
        "Tip: my scanner never misses. Neither do you, if you pick your shots.",
        "Bottle Redemption jammed again. I'm not even mad. Go fight someone."],
       ["Express lane? 10 items or less. Those lurkers? More like 20.",

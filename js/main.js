@@ -155,10 +155,11 @@ function endTalk(){
   P.talked[d.npc.id] = (P.talked[d.npc.id] || 0) + 1;
   if (d.npc.id === "sedona"){
     if (P.hp < P.maxHp){
-      P.hp = Math.min(P.maxHp, P.hp + 20);
+      const gained = Math.ceil(P.maxHp - P.hp);
+      P.hp = P.maxHp;
       GAME.timeMin += 10; /* scanning takes a while */
       AudioFX.play("heal");
-      toast("SEDONA SCANNED YOUR WOUNDS  +20 HP", 2.5);
+      toast("SEDONA SCANNED YOUR WOUNDS  +" + gained + " HP (FULL)", 2.5);
     } else toast("SEDONA: ALL ITEMS RECOGNIZED. YOU'RE FINE.", 2.5);
   }
   if (d.npc.id === "corey" && !P.coreyGift){

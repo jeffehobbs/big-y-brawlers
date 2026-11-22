@@ -67,13 +67,13 @@ function isSolid(m, x, y){
 /* Zones: id, name, rect [x0,y0,x1,y1] (inclusive), enemy pool, grocery pickups */
 const ZONES = [
   { id:"checkout", name:"CHECKOUT LANES", rect:[1,7,62,11],  pool:["lurker","browser","browser"], max:3,
-    picks:[[10,7,"apple"],[16,7,"chips"],[24,7,"coffee"],[52,10,"coupon"],[48,10,"banana"]] },
+    picks:[[10,10,"apple"],[16,10,"chips"],[24,10,"coffee"],[52,10,"coupon"],[48,10,"banana"]] },
   { id:"aisles", name:"GROCERY AISLES", rect:[9,12,46,29], pool:["browser","flyer","chomper","browser","flyer"], max:5,
     picks:[[14,14,"soup"],[15,24,"bread"],[19,17,"milk"],[23,20,"chips"],[28,15,"candy"],[33,22,"clamato"]] },
   { id:"fresh", name:"PRODUCE & BAKERY", rect:[1,12,8,33], pool:["crawler","flyer","crawler"], max:3,
-    picks:[[1,13,"apple"],[5,29,"banana"],[9,31,"egg"],[1,15,"yogurt"]] },
+    picks:[[4,16,"apple"],[5,29,"banana"],[9,31,"egg"],[7,16,"yogurt"]] },
   { id:"dairy", name:"DAIRY / FROZEN / PHARMACY", rect:[47,1,62,33], pool:["lurker","flyer","crawler","lurker"], max:4,
-    picks:[[54,13,"milk"],[62,15,"yogurt"],[54,31,"fish"],[62,32,"chicken"],[50,3,"coupon"],[58,20,"clamato"]] },
+    picks:[[54,13,"milk"],[53,15,"yogurt"],[54,31,"fish"],[53,32,"chicken"],[55,9,"coupon"],[58,20,"clamato"]] },
   { id:"deli", name:"DELI / MEAT / FLOOR", rect:[9,29,46,36], pool:["chomper","crawler","browser"], max:3,
     picks:[[12,36,"pizza"],[20,36,"chicken"],[40,34,"soup"]] },
 ];
