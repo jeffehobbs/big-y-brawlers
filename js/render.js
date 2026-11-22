@@ -94,15 +94,17 @@ function renderExplore(g, t){
   g.fillStyle = "rgba(18,18,18,0.85)";
   g.fillRect(0, 0, VIEW_W, 22);
   g.fillStyle = "#c40d3c"; g.fillRect(0, 22, VIEW_W, 2);
-  drawText(g, "BIG Y  136 N KING ST, NORTHAMPTON MA", 8, 6, 1, "#c40d3c");
-  drawTextC(g, zlabel, VIEW_W / 2, 6, 1, "#fff", "#000");
+  drawText(g, "BIG Y  136 N KING ST, NORTHAMPTON MA", 8, 8, 1, "#ff5a7a", "#000");
+  drawTextC(g, zlabel, VIEW_W / 2 - 40, 8, 1, "#fff", "#000");
 
   /* HUD right: clock + groceries */
   const h = Math.floor(GAME.timeMin / 60), m = Math.floor(GAME.timeMin % 60);
   const hh = ((h + 11) % 12) + 1;
   const clockStr = hh + ":" + String(m).padStart(2, "0") + (h >= 12 ? " PM" : " AM");
-  drawText(g, clockStr, VIEW_W - 96, 5, 1, GAME.timeMin >= 20 * 60 ? "#ff6a6a" : "#ffd700", "#000");
-  drawText(g, "GROCERIES " + collectedCount() + "/" + TOTAL_PICKS, VIEW_W - 150, 13, 1, "#5aff8a");
+  const clockX = VIEW_W - 8 - textWidth(clockStr, 1);
+  drawText(g, clockStr, clockX, 8, 1, GAME.timeMin >= 20 * 60 ? "#ff6a6a" : "#ffd700", "#000");
+  const grStr = "GROCERIES " + collectedCount() + "/" + TOTAL_PICKS;
+  drawText(g, grStr, clockX - 16 - textWidth(grStr, 1), 8, 1, "#5aff8a", "#000");
 
   /* bottom-left: HP / XP / LV */
   g.fillStyle = "rgba(18,18,18,0.85)";
