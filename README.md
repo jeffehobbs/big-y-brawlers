@@ -1,6 +1,6 @@
 # Big Y Brawlers
 
-Overhead pixel-art RPG set in the Northampton Big Y. Play as Sedona, Calvin or Corey,
+Overhead pixel-art RPG set in the Northampton Big Y. Play as Sedonia, Kelvin or Cory,
 restock the store, battle rival shoppers in turn-based combat, and take down the Cartel Captain before the 9 PM close.
 
 Run: `python3 -m http.server` in this folder, then open http://localhost:8000

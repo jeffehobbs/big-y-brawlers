@@ -3,7 +3,7 @@
 
 const CHARS = {
   sedona: {
-    id:"sedona", name:"SEDONA", role:"SELF-CHECKOUT ATTENDANT",
+    id:"sedona", name:"SEDONIA", role:"SELF-CHECKOUT ATTENDANT",
     hp:62, atk:9, spd:5,
     desc:"QUICK FINGERS ON THE SCANNER. BALANCED FIGHTER.",
     special:"SCAN & TAG",
@@ -11,7 +11,7 @@ const CHARS = {
     color:"#c40d3c",
   },
   calvin: {
-    id:"calvin", name:"CALVIN", role:"STORE MANAGER",
+    id:"calvin", name:"KELVIN", role:"STORE MANAGER",
     hp:84, atk:7, spd:4,
     desc:"TANKY. CARRIES THE MASTER KEYS AND A VERY SERIOUS STAMP.",
     special:"MANAGER'S STAMP",
@@ -19,7 +19,7 @@ const CHARS = {
     color:"#004a98",
   },
   corey: {
-    id:"corey", name:"COREY", role:"ASSISTANT MANAGER",
+    id:"corey", name:"CORY", role:"ASSISTANT MANAGER",
     hp:52, atk:6, spd:7,
     desc:"FAST ON HIS FEET. TALKS TO THE WALKIE-TALKIE LIKE IT OWES HIM MONEY.",
     special:"STORE CREDIT STORM",
@@ -102,9 +102,9 @@ function getDialogue(npc, player){
        "Stock the aisles first, then come hit the stockroom. You'll know when it unlocks."],
     ],
     corey: [
-      ["Yo. Corey here. Assistant manager, walkie-talkie whisperer.",
+      ["Yo. Cory here. Assistant manager, walkie-talkie whisperer.",
        "The stockroom door is locked till you've got " + UNLOCK_AT + " groceries bagged.",
-       "Healing tip: Sedona's lane and the break room fix you up. Don't die out there.",
+       "Healing tip: Sedonia's lane and the break room fix you up. Don't die out there.",
        "Pizza Shop opens at 11 and the Sub Shop never closes early. Both are fair game for loot."],
       ["The Cartel Captain's got a cart the size of a minivan. Guard when he swings.",
        "When all the zones are restocked, hit that steel door. Bring your A game."],

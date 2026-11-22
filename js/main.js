@@ -161,8 +161,8 @@ function endTalk(){
       P.hp = P.maxHp;
       GAME.timeMin += 10; /* scanning takes a while */
       AudioFX.play("heal");
-      toast("SEDONA SCANNED YOUR WOUNDS  +" + gained + " HP (FULL)", 2.5);
-    } else toast("SEDONA: ALL ITEMS RECOGNIZED. YOU'RE FINE.", 2.5);
+      toast("SEDONIA SCANNED YOUR WOUNDS  +" + gained + " HP (FULL)", 2.5);
+    } else toast("SEDONIA: ALL ITEMS RECOGNIZED. YOU'RE FINE.", 2.5);
   }
   if (d.npc.id === "corey" && !P.coreyGift){
     P.coreyGift = true;
@@ -335,7 +335,7 @@ function renderVictory(g, t){
   CHAR_IDS.forEach((id, i) => drawGrid(g, SPR[id].down[frame], 400 - 168 + i * 120, 170, 6));
   const h = Math.floor(GAME.timeMin / 60), m = Math.floor(GAME.timeMin % 60);
   const hh = ((h + 11) % 12) + 1;
-  drawTextC(g, "CALVIN: GOOD WORK. SEDONA: NO ITEMS UNSCANNED. COREY: I'M ON BREAK.", VIEW_W / 2, 290, 1, "#ccc");
+  drawTextC(g, "KELVIN: GOOD WORK. SEDONIA: NO ITEMS UNSCANNED. CORY: I'M ON BREAK.", VIEW_W / 2, 290, 1, "#ccc");
   drawTextC(g, P.name + " LV " + P.lvl + "   CLEARED AT " + hh + ":" + String(m).padStart(2, "0") + (h >= 12 ? " PM" : " AM") +
     "   GROCERIES " + collectedCount() + "/" + TOTAL_PICKS, VIEW_W / 2, 330, 1, "#9ad");
   drawTextC(g, "BIG Y  136 N KING ST  NORTHAMPTON MA", VIEW_W / 2, 380, 1, "#c40d3c");

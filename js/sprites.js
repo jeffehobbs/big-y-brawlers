@@ -98,9 +98,9 @@ function drawGrid(g, grid, x, y, scale, mirror){
 
 /* Prebuilt character palettes */
 const STAFF = {
-  sedona: { name:"SEDONA", hair:"#5a3218", skin:"#e8b088", shirt:"#f5f0e8", vest:"#c40d3c", pants:"#3a3a44", shoe:"#222", eye:"#121212", longHair:true },
-  calvin: { name:"CALVIN", hair:"#241a12", skin:"#8a5a34", shirt:"#004a98", vest:"#004a98", pants:"#5a4a33", shoe:"#1c1c1c", eye:"#0c0c0c" },
-  corey:  { name:"COREY",  hair:"#151515", skin:"#c98a5a", shirt:"#e8e8e8", vest:"#008000", pants:"#2e2e38", shoe:"#1a1a1a", eye:"#0c0c0c" },
+  sedona: { name:"SEDONIA", hair:"#5a3218", skin:"#e8b088", shirt:"#f5f0e8", vest:"#c40d3c", pants:"#3a3a44", shoe:"#222", eye:"#121212", longHair:true },
+  calvin: { name:"KELVIN", hair:"#241a12", skin:"#8a5a34", shirt:"#004a98", vest:"#004a98", pants:"#5a4a33", shoe:"#1c1c1c", eye:"#0c0c0c" },
+  corey:  { name:"CORY",  hair:"#151515", skin:"#c98a5a", shirt:"#e8e8e8", vest:"#008000", pants:"#2e2e38", shoe:"#1a1a1a", eye:"#0c0c0c" },
 };
 /* Build sprite cache: chars[id][facing][frame] */
 const SPR = {};
