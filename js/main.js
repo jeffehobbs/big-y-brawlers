@@ -44,6 +44,8 @@ Music.init();
 Music.start();
 
 /* ---------- screen state ---------- */
+const CONT_RECT = [10, 462, 170, 38];
+const GO_RELOAD = [130, 370, 250, 54], GO_TITLE = [420, 370, 250, 54];
 const UI = { sel: 0, t: 0, introI: 0, bagSel: 0, bag: false, paused: false };
 const CHAR_IDS = ["sedona", "calvin", "corey"];
 
@@ -86,11 +88,129 @@ window.addEventListener("blur", () => {
   GAME.keys = {};
   if (GAME.state === "EXPLORE" && !GAME.dialog || (GAME.state === "BATTLE" && Combat.turn === "player" && Combat.subMenu < 0 && !Combat.over)) pauseGame();
 });
-canvas.addEventListener("pointerdown", () => {
+/* ---------- touch + mouse taps on the canvas ---------- */
+function canvasPoint(e){
+  const r = canvas.getBoundingClientRect();
+  return [(e.clientX - r.left) * VIEW_W / r.width, (e.clientY - r.top) * VIEW_H / r.height];
+}
+const hit = (x, y, r) => x >= r[0] && x <= r[0] + r[2] && y >= r[1] && y <= r[1] + r[3];
+function unlockAudio(){
   AudioFX.ensure();
   if (GAME.state === "TITLE" || GAME.state === "SELECT") Music.start();
-  if (GAME.state === "TITLE") handleKey("enter");
+}
+function onTap(x, y){
+  if (UI.paused){
+    const inBox = hit(x, y, [PAUSE.bx, PAUSE.by, PAUSE.bw, PAUSE.bh]);
+    if (hit(x, y, pauseRow(1))) handleKey("q");
+    else if (hit(x, y, pauseRow(2))) AudioFX.toggle();
+    else handleKey("escape");
+    return;
+  }
+  switch (GAME.state){
+    case "TITLE":
+      if (GAME.hasSave && hit(x, y, CONT_RECT)) handleKey("c"); else handleKey("enter");
+      break;
+    case "SELECT":
+      for (let i = 0; i < 3; i++){
+        if (hit(x, y, [30 + i * 255, 76, 240, 400])){
+          if (UI.sel === i) handleKey("z"); else { UI.sel = i; AudioFX.play("talk"); }
+          return;
+        }
+      }
+      if (GAME.hasSave && y > 480) handleKey("c");
+      break;
+    case "INTRO": handleKey("z"); break;
+    case "EXPLORE":
+      if (UI.bag){
+        const ids = bagList(), first = bagFirst(ids);
+        if (!hit(x, y, [BAG.bx, BAG.by, BAG.bw, BAG.bh])){ UI.bag = false; return; }
+        for (let i = 0; i < Math.min(BAG.per, ids.length - first); i++){
+          if (hit(x, y, [BAG.bx, BAG.by + BAG.y0 + 14 + i * BAG.rowH, BAG.bw, BAG.rowH])){ UI.bagSel = first + i; bagKey("z"); return; }
+        }
+        return;
+      }
+      if (GAME.dialog) handleKey("z");
+      break;
+    case "BATTLE": Combat.tap(x, y); break;
+    case "GAMEOVER":
+      if (hit(x, y, GO_TITLE) || (!hasSaveNow() && hit(x, y, [275, 370, 250, 54]))) handleKey("x");
+      else if (hit(x, y, GO_RELOAD)) handleKey("z");
+      break;
+    case "VICTORY": handleKey("z"); break;
+  }
+}
+function hasSaveNow(){ try { return !!localStorage.getItem("bigy_brawlers_save"); } catch (e){ return false; } }
+canvas.addEventListener("pointerdown", e => {
+  unlockAudio();
+  const [x, y] = canvasPoint(e);
+  onTap(x, y);
 });
+/* iOS only unlocks audio inside touchend/click */
+window.addEventListener("touchend", unlockAudio, { passive: true });
+window.addEventListener("click", unlockAudio);
+document.addEventListener("gesturestart", e => e.preventDefault());
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+/* ---------- on-screen touch controls ---------- */
+const IS_TOUCH = (navigator.maxTouchPoints > 0) || ("ontouchstart" in window) || /[?&]touch=1/.test(location.search);
+GAME.touch = IS_TOUCH;
+const TC = {};
+function mkEl(id, cls, html){ const el = document.createElement("div"); el.id = id; el.className = cls; if (html) el.innerHTML = html; document.body.appendChild(el); return el; }
+function initTouchControls(){
+  TC.stick = mkEl("stick", "tc", '<div id="knob"></div>');
+  TC.knob = TC.stick.firstChild;
+  TC.a = mkEl("btnA", "tc tbtn", "A");
+  TC.bag = mkEl("btnBag", "tc tbtn", "BAG");
+  TC.pause = mkEl("btnPause", "tc tbtn", "II");
+  let stickId = null;
+  const R = 56;
+  function setStick(e){
+    const r = TC.stick.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    const len = Math.hypot(dx, dy) || 1, cl = Math.min(len, R);
+    const nx = dx / len * cl, ny = dy / len * cl;
+    TC.knob.style.transform = "translate(" + nx + "px," + ny + "px)";
+    const t = R * 0.35;
+    GAME.keys.left = nx < -t; GAME.keys.right = nx > t; GAME.keys.up = ny < -t; GAME.keys.down = ny > t;
+  }
+  function endStick(){
+    stickId = null; TC.knob.style.transform = "";
+    GAME.keys.left = GAME.keys.right = GAME.keys.up = GAME.keys.down = false;
+  }
+  TC.stick.addEventListener("pointerdown", e => {
+    e.preventDefault(); unlockAudio(); stickId = e.pointerId;
+    try { TC.stick.setPointerCapture(e.pointerId); } catch (err){}
+    setStick(e);
+  });
+  TC.stick.addEventListener("pointermove", e => { if (e.pointerId === stickId) setStick(e); });
+  TC.stick.addEventListener("pointerup", e => { if (e.pointerId === stickId) endStick(); });
+  TC.stick.addEventListener("pointercancel", endStick);
+  window.addEventListener("blur", endStick);
+  const press = (el, key) => el.addEventListener("pointerdown", e => { e.preventDefault(); unlockAudio(); handleKey(key); });
+  press(TC.a, "z"); press(TC.bag, "i"); press(TC.pause, "escape");
+}
+let tcShown = "";
+function updateTouchControls(){
+  if (!IS_TOUCH || !TC.stick) return;
+  const exploring = GAME.state === "EXPLORE" && !UI.paused && !UI.bag;
+  const show = {
+    stick: exploring && !GAME.dialog,
+    a: exploring,
+    bag: exploring && !GAME.dialog,
+    pause: (GAME.state === "EXPLORE" || GAME.state === "BATTLE") && !UI.paused && !UI.bag,
+  };
+  const sig = JSON.stringify(show);
+  if (sig === tcShown) return;
+  tcShown = sig;
+  for (const k in show) TC[k].classList.toggle("on", !!show[k]);
+  if (!show.stick){ GAME.keys.left = GAME.keys.right = GAME.keys.up = GAME.keys.down = false; TC.knob.style.transform = ""; }
+}
+if (IS_TOUCH) initTouchControls();
+
+/* small screens get larger text */
+function updateBig(){ GAME.big = canvas.getBoundingClientRect().width < 760; }
+window.addEventListener("resize", updateBig);
+updateBig();
 
 function pauseGame(){
   if (UI.paused) return;
@@ -125,7 +245,7 @@ function handleKey(k){
       if (confirm){
         AudioFX.play("talk");
         UI.introI++;
-        if (UI.introI >= GAME.intro.length){ GAME.state = "EXPLORE"; toast("WASD / ARROWS: MOVE   Z: TALK   I: BAG", 4); }
+        if (UI.introI >= GAME.intro.length){ GAME.state = "EXPLORE"; toast(GAME.touch ? "STICK: MOVE   A: TALK   BAG: EAT" : "WASD / ARROWS: MOVE   Z: TALK   I: BAG", 4); }
       } else if (k === "escape") GAME.state = "EXPLORE";
       break;
     case "EXPLORE":
@@ -211,23 +331,27 @@ function bagKey(k){
     } else toast("SAVE THAT FOR A FIGHT", 1.5);
   }
 }
+const BAG = { bx: 170, by: 40, bw: 460, bh: 432, rowH: 30, per: 10, y0: 56 };
+function bagFirst(ids){ return clamp(UI.bagSel - 4, 0, Math.max(0, ids.length - BAG.per)); }
 function renderBag(g){
   g.fillStyle = "rgba(0,0,0,0.6)"; g.fillRect(0, 0, VIEW_W, VIEW_H);
-  const bx = 200, by = 70, bw = 400, bh = 372;
+  const { bx, by, bw, bh } = BAG;
   g.fillStyle = "#16161c"; g.fillRect(bx, by, bw, bh);
   g.fillStyle = "#c40d3c"; g.fillRect(bx, by, bw, 3);
-  drawText(g, "YOUR BAG", bx + 16, by + 14, 2, "#ffd700");
+  drawText(g, "YOUR BAG", bx + 16, by + 14, 3, "#ffd700");
   const ids = bagList();
-  if (!ids.length) drawText(g, "EMPTY. GO WIN SOME GROCERIES.", bx + 16, by + 60, 1, "#999");
-  const per = 14, first = clamp(UI.bagSel - 6, 0, Math.max(0, ids.length - per));
-  for (let i = 0; i < Math.min(per, ids.length - first); i++){
-    const id = ids[first + i], y = by + 48 + i * 22, on = first + i === UI.bagSel;
-    if (on){ g.fillStyle = "rgba(255,215,0,0.12)"; g.fillRect(bx + 8, y - 3, bw - 16, 20); }
-    drawIcon(g, id, bx + 14, y - 2, 1);
-    drawText(g, ITEMS[id].name + " x" + GAME.player.inv[id], bx + 38, y, 1, on ? "#ffd700" : "#ddd");
-    drawText(g, ITEMS[id].desc, bx + 38, y + 9, 1, "#888");
+  if (!ids.length) drawText(g, "EMPTY. GO WIN SOME GROCERIES.", bx + 16, by + 70, 1, "#999");
+  const first = bagFirst(ids);
+  for (let i = 0; i < Math.min(BAG.per, ids.length - first); i++){
+    const id = ids[first + i], y = by + BAG.y0 + 18 + i * BAG.rowH, on = first + i === UI.bagSel;
+    if (on){ g.fillStyle = "rgba(255,215,0,0.12)"; g.fillRect(bx + 8, y - 4, bw - 16, BAG.rowH - 2); }
+    drawIcon(g, id, bx + 14, y - 1, 1);
+    drawText(g, ITEMS[id].name + " x" + GAME.player.inv[id], bx + 38, y - 2, 2, on ? "#ffd700" : "#ddd");
+    drawText(g, ITEMS[id].desc, bx + 38, y + 14, 1, "#888");
   }
-  drawText(g, "UP/DOWN  Z: EAT  I/X: CLOSE", bx + 16, by + bh - 18, 1, "#777");
+  if (first > 0) drawText(g, "^", bx + bw - 24, by + BAG.y0, 2, "#aaa");
+  if (first + BAG.per < ids.length) drawText(g, "v", bx + bw - 24, by + bh - 40, 2, "#aaa");
+  drawText(g, GAME.touch ? "TAP A GROCERY TO EAT IT. TAP OUTSIDE TO CLOSE." : "UP/DOWN  Z: EAT  I/X: CLOSE", bx + 16, by + bh - 18, 1, "#777");
 }
 
 /* ---------- screens ---------- */
@@ -247,7 +371,10 @@ function renderTitle(g, t){
     drawTextC(g, "PRESS START", VIEW_W / 2, 330, 3, "#fff", "#000");
   }
   if (GAME.hasSave){
-    drawText(g, "C: CONTINUE", 8, VIEW_H - 14, 1, "#fff", "#000");
+    const r = CONT_RECT;
+    g.fillStyle = "rgba(18,18,18,0.8)"; g.fillRect(r[0], r[1], r[2], r[3]);
+    g.fillStyle = "#c40d3c"; g.fillRect(r[0], r[1], r[2], 3);
+    drawText(g, "CONTINUE", r[0] + 14, r[1] + 11, 2, "#fff");
   }
   if (!Music.started && Math.floor(t * 2) % 2 === 0){
     drawText(g, "CLICK OR PRESS A KEY FOR MUSIC", VIEW_W - 8 - textWidth("CLICK OR PRESS A KEY FOR MUSIC", 1), VIEW_H - 14, 1, "#fff", "#000");
@@ -290,15 +417,16 @@ function renderSelect(g, t){
   drawTextC(g, "LEFT/RIGHT: CHOOSE   Z: START" + (GAME.hasSave ? "   C: CONTINUE" : ""), VIEW_W / 2, VIEW_H - 22, 1, "#888");
 }
 
-function wrapText(g, str, x, y, maxW, lh, color){
+function wrapText(g, str, x, y, maxW, lh, color, scale){
+  scale = scale || 1;
   const words = str.split(" ");
   let cur = "", row = 0;
   for (const w of words){
     const test = cur ? cur + " " + w : w;
-    if (textWidth(test, 1) > maxW && cur){ drawText(g, cur, x, y + row * lh, 1, color); row++; cur = w; }
+    if (textWidth(test, scale) > maxW && cur){ drawText(g, cur, x, y + row * lh, scale, color); row++; cur = w; }
     else cur = test;
   }
-  if (cur) drawText(g, cur, x, y + row * lh, 1, color);
+  if (cur) drawText(g, cur, x, y + row * lh, scale, color);
   return row + 1;
 }
 
@@ -317,9 +445,9 @@ function renderIntro(g, t){
   g.fillStyle = "rgba(0,0,0,0.4)"; g.fillRect(bx + 14, by + 78, 52, 4);
   drawText(g, STAFF[id].name, bx + 84, by + 14, 2, "#ffd700");
   drawText(g, CHARS[id].role, bx + 84, by + 34, 1, "#999");
-  wrapText(g, line[1], bx + 84, by + 62, bw - 160, 18, "#eee");
-  if (Math.floor(t * 3) % 2 === 0) drawText(g, "Z >", bx + bw - 48, by + bh - 20, 1, "#ffd700");
-  drawText(g, "ESC: SKIP", bx + 16, by + bh - 20, 1, "#555");
+  wrapText(g, line[1], bx + 84, by + 58, bw - 160, GAME.big ? 24 : 18, "#eee", GAME.big ? 2 : 1);
+  if (Math.floor(t * 3) % 2 === 0) drawText(g, GAME.touch ? "TAP >" : "Z >", bx + bw - (GAME.touch ? 64 : 48), by + bh - 20, 1, "#ffd700");
+  if (!GAME.touch) drawText(g, "ESC: SKIP", bx + 16, by + bh - 20, 1, "#555");
 }
 
 function renderGameOver(g, t){
@@ -331,8 +459,14 @@ function renderGameOver(g, t){
     drawTextC(g, P.name + "  LV " + P.lvl + "   GROCERIES " + collectedCount() + "/" + TOTAL_PICKS, VIEW_W / 2, 270, 1, "#9ad");
   }
   const hasSave = (function(){ try { return !!localStorage.getItem("bigy_brawlers_save"); } catch (e){ return false; } })();
-  if (Math.floor(t * 2) % 2 === 0)
-    drawTextC(g, hasSave ? "Z: RELOAD LAST SAVE    X: TITLE" : "Z: BACK TO TITLE", VIEW_W / 2, 340, 2, "#ffd700", "#000");
+  const btn = (r, label, on) => {
+    g.fillStyle = on ? "#c40d3c" : "#2a2a34"; g.fillRect(r[0], r[1], r[2], r[3]);
+    g.fillStyle = "rgba(255,255,255,0.15)"; g.fillRect(r[0], r[1], r[2], 3);
+    drawTextC(g, label, r[0] + r[2] / 2, r[1] + 19, 2, "#fff");
+  };
+  if (hasSave) btn(GO_RELOAD, "RELOAD SAVE", true);
+  btn(hasSave ? GO_TITLE : [275, 370, 250, 54], "TITLE", !hasSave);
+  if (!GAME.touch) drawTextC(g, hasSave ? "Z: RELOAD LAST SAVE    X: TITLE" : "Z: BACK TO TITLE", VIEW_W / 2, 450, 1, "#888");
 }
 
 function renderVictory(g, t){
@@ -355,28 +489,35 @@ function renderVictory(g, t){
   drawTextC(g, P.name + " LV " + P.lvl + "   CLEARED AT " + hh + ":" + String(m).padStart(2, "0") + (h >= 12 ? " PM" : " AM") +
     "   GROCERIES " + collectedCount() + "/" + TOTAL_PICKS, VIEW_W / 2, 330, 1, "#9ad");
   drawTextC(g, "BIG Y  136 N KING ST  NORTHAMPTON MA", VIEW_W / 2, 380, 1, "#c40d3c");
-  if (Math.floor(t * 2) % 2 === 0) drawTextC(g, "Z: PLAY AGAIN", VIEW_W / 2, 430, 2, "#ffd700", "#000");
+  if (Math.floor(t * 2) % 2 === 0) drawTextC(g, GAME.touch ? "TAP TO PLAY AGAIN" : "Z: PLAY AGAIN", VIEW_W / 2, 430, 2, "#ffd700", "#000");
 }
 
+const PAUSE = { bx: 190, by: 90, bw: 420, bh: 330 };
+function pauseRow(i){ return [PAUSE.bx, PAUSE.by + 84 + i * 30, PAUSE.bw, 28]; }
 function renderPause(g, t){
   g.fillStyle = "rgba(0,0,0,0.7)"; g.fillRect(0, 0, VIEW_W, VIEW_H);
-  const bx = 220, by = 110, bw = 360, bh = 290;
+  const { bx, by, bw, bh } = PAUSE;
   g.fillStyle = "#16161c"; g.fillRect(bx, by, bw, bh);
   g.fillStyle = "#c40d3c"; g.fillRect(bx, by, bw, 4);
   g.fillStyle = "#222"; g.fillRect(bx, by + bh - 3, bw, 3);
-  drawTextC(g, "PAUSED", VIEW_W / 2, by + 24, 4, "#ffd700", "#5a0518");
-  const rows = [["ESC / Z", "RESUME"], ["Q", "QUIT TO TITLE"], ["M", AudioFX.muted ? "UNMUTE" : "MUTE"]];
+  drawTextC(g, "PAUSED", VIEW_W / 2, by + 20, 4, "#ffd700", "#5a0518");
+  const rows = GAME.touch ? [["TAP", "RESUME"], ["TAP", "QUIT TO TITLE"], ["TAP", AudioFX.muted ? "UNMUTE" : "MUTE"]]
+    : [["ESC / Z", "RESUME"], ["Q", "QUIT TO TITLE"], ["M", AudioFX.muted ? "UNMUTE" : "MUTE"]];
   rows.forEach(([k, v], i) => {
-    drawText(g, k, bx + 40, by + 90 + i * 24, 1, "#ffd700");
-    drawText(g, v, bx + 150, by + 90 + i * 24, 1, "#fff");
+    const r = pauseRow(i);
+    g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(r[0] + 16, r[1], r[2] - 32, r[3]);
+    drawText(g, k, bx + 30, r[1] + 7, 2, "#ffd700");
+    drawText(g, v, bx + 190, r[1] + 7, 2, "#fff");
   });
-  g.fillStyle = "#2a2a34"; g.fillRect(bx + 24, by + 170, bw - 48, 2);
-  const help = [["WASD / ARROWS", "MOVE"], ["Z / ENTER", "TALK, CONFIRM"], ["I", "BAG"], ["X", "BACK"]];
-  help.forEach(([k, v], i) => {
-    drawText(g, k, bx + 40, by + 188 + i * 18, 1, "#9ad");
-    drawText(g, v, bx + 190, by + 188 + i * 18, 1, "#ccc");
-  });
-  if (GAME.state === "EXPLORE") drawTextC(g, "QUITTING SAVES YOUR PROGRESS", VIEW_W / 2, by + bh - 20, 1, "#777");
+  if (!GAME.touch){
+    g.fillStyle = "#2a2a34"; g.fillRect(bx + 24, by + 186, bw - 48, 2);
+    const help = [["WASD / ARROWS", "MOVE"], ["Z / ENTER", "TALK, CONFIRM"], ["I", "BAG"], ["X", "BACK"]];
+    help.forEach(([k, v], i) => {
+      drawText(g, k, bx + 30, by + 200 + i * 22, 2, "#9ad");
+      drawText(g, v, bx + 230, by + 200 + i * 22, 2, "#ccc");
+    });
+  }
+  if (GAME.state === "EXPLORE") drawTextC(g, "QUITTING SAVES YOUR PROGRESS", VIEW_W / 2, by + bh - 18, 1, "#777");
 }
 
 /* ---------- main loop ---------- */
@@ -385,6 +526,9 @@ function frame(now){
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now; clock += dt;
   Music.update(dt);
+  updateBig();
+  updateTouchControls();
+  if (IS_TOUCH && window.innerHeight > window.innerWidth && !UI.paused && (GAME.state === "EXPLORE" || GAME.state === "BATTLE")) handleKey("escape");
   if (GAME.msgT > 0) GAME.msgT -= dt;
   switch (GAME.state){
     case "TITLE":   renderTitle(g, clock); break;

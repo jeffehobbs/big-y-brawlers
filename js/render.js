@@ -94,17 +94,21 @@ function renderExplore(g, t){
   g.fillStyle = "rgba(18,18,18,0.85)";
   g.fillRect(0, 0, VIEW_W, 22);
   g.fillStyle = "#c40d3c"; g.fillRect(0, 22, VIEW_W, 2);
-  drawText(g, "BIG Y  136 N KING ST, NORTHAMPTON MA", 8, 8, 1, "#ff5a7a", "#000");
-  drawTextC(g, zlabel, VIEW_W / 2 - 40, 8, 1, "#fff", "#000");
-
-  /* HUD right: clock + groceries */
+  const S = GAME.big ? 2 : 1;
   const h = Math.floor(GAME.timeMin / 60), m = Math.floor(GAME.timeMin % 60);
   const hh = ((h + 11) % 12) + 1;
   const clockStr = hh + ":" + String(m).padStart(2, "0") + (h >= 12 ? " PM" : " AM");
-  const clockX = VIEW_W - 8 - textWidth(clockStr, 1);
-  drawText(g, clockStr, clockX, 8, 1, GAME.timeMin >= 20 * 60 ? "#ff6a6a" : "#ffd700", "#000");
+  const clockX = VIEW_W - 8 - textWidth(clockStr, S);
   const grStr = "GROCERIES " + collectedCount() + "/" + TOTAL_PICKS;
-  drawText(g, grStr, clockX - 16 - textWidth(grStr, 1), 8, 1, "#5aff8a", "#000");
+  const ty0 = S === 2 ? 4 : 8;
+  if (S === 2){
+    drawText(g, zlabel, 8, ty0, 2, "#fff", "#000");
+  } else {
+    drawText(g, "BIG Y  136 N KING ST, NORTHAMPTON MA", 8, 8, 1, "#ff5a7a", "#000");
+    drawTextC(g, zlabel, VIEW_W / 2 - 40, 8, 1, "#fff", "#000");
+  }
+  drawText(g, clockStr, clockX, ty0, S, GAME.timeMin >= 20 * 60 ? "#ff6a6a" : "#ffd700", "#000");
+  drawText(g, grStr, clockX - 16 - textWidth(grStr, S), ty0, S, "#5aff8a", "#000");
 
   /* bottom-left: HP / XP / LV */
   g.fillStyle = "rgba(18,18,18,0.85)";
@@ -112,7 +116,7 @@ function renderExplore(g, t){
   g.fillStyle = "#c40d3c"; g.fillRect(0, VIEW_H - 46, 300, 2);
   drawText(g, P.name + " LV" + P.lvl, 8, VIEW_H - 40, 1, "#fff");
   bar(g, 8, VIEW_H - 28, 160, 10, P.hp, P.maxHp, "#5aff8a", "#203020");
-  drawText(g, Math.ceil(P.hp) + "/" + P.maxHp, 174, VIEW_H - 27, 1, "#fff");
+  drawText(g, Math.ceil(P.hp) + "/" + P.maxHp, 174, GAME.big ? VIEW_H - 31 : VIEW_H - 27, GAME.big ? 2 : 1, "#fff");
   drawText(g, "XP", 8, VIEW_H - 12, 1, "#9ad");
   bar(g, 30, VIEW_H - 12, 138, 7, P.xp, P.xpNext, "#60a0d0", "#223");
   drawText(g, P.xp + "/" + P.xpNext, 174, VIEW_H - 11, 1, "#9ad");
@@ -121,11 +125,12 @@ function renderExplore(g, t){
   if (GAME.msgT > 0 && GAME.msg){
     const a = Math.min(1, GAME.msgT / 0.4);
     g.fillStyle = "rgba(18,18,18," + (0.9 * a) + ")";
-    const w = textWidth(GAME.msg, 1) + 24;
-    g.fillRect(VIEW_W / 2 - w / 2, VIEW_H - 92, w, 22);
+    const ts = (GAME.big && textWidth(GAME.msg, 2) + 24 <= VIEW_W - 20) ? 2 : 1;
+    const w = textWidth(GAME.msg, ts) + 24, th = ts * 7 + 15, ty = VIEW_H - 78 - th;
+    g.fillRect(VIEW_W / 2 - w / 2, ty, w, th);
     g.fillStyle = "rgba(196,13,60," + a + ")";
-    g.fillRect(VIEW_W / 2 - w / 2, VIEW_H - 92, w, 2);
-    drawTextC(g, GAME.msg, VIEW_W / 2, VIEW_H - 86, 1, "rgba(255,255,255," + a + ")");
+    g.fillRect(VIEW_W / 2 - w / 2, ty, w, 2);
+    drawTextC(g, GAME.msg, VIEW_W / 2, ty + 8, ts, "rgba(255,255,255," + a + ")");
   }
 
   renderDialog(g);
@@ -147,18 +152,19 @@ function renderDialog(g){
   drawText(g, STAFF[d.npc.id].name, bx + 84, by + 14, 2, "#ffd700");
   drawText(g, d.npc.title, bx + 84, by + 34, 1, "#999");
   /* text (simple wrap) */
+  const ds = GAME.big ? 2 : 1;
   const words = d.lines[d.i].split(" ");
   const lines = [];
   let cur = "";
   for (const w of words){
-    if (textWidth(cur + " " + w, 1) > bw - 160){ lines.push(cur); cur = w; }
+    if (textWidth(cur + " " + w, ds) > bw - 160){ lines.push(cur); cur = w; }
     else cur = cur ? cur + " " + w : w;
   }
   if (cur) lines.push(cur);
   for (let i = 0; i < lines.length; i++){
-    drawText(g, lines[i], bx + 84, by + 62 + i * 18, 1, "#eee");
+    drawText(g, lines[i], bx + 84, by + 58 + i * (ds === 2 ? 24 : 18), ds, "#eee");
   }
   if (Math.floor(performance.now() / 350) % 2 === 0){
-    drawText(g, "Z >", bx + bw - 48, by + bh - 20, 1, "#ffd700");
+    drawText(g, GAME.touch ? "TAP >" : "Z >", bx + bw - (GAME.touch ? 64 : 48), by + bh - 20, 1, "#ffd700");
   }
 }

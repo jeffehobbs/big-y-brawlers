@@ -32,6 +32,8 @@ const GAME = {
   hasSave: false,
   gameOverWhy: "",
   keys: {},
+  touch: false,  /* touch device: on-screen controls */
+  big: false,   /* small screen: draw larger text */
 };
 
 function toast(text, t){ GAME.msg = text; GAME.msgT = t || 2.5; }

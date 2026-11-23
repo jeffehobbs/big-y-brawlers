@@ -306,25 +306,28 @@ const Combat = {
     g.fillRect(ex - 2, ey + 16 * es - 2, 16 * es + 14, 4);
 
     /* HUD */
+    const S = GAME.big ? 2 : 1;
     g.fillStyle = "#121212"; g.fillRect(0, 0, 800, 84);
     g.fillStyle = "#222"; g.fillRect(0, 84, 800, 2);
     /* player bar */
-    drawText(g, P.name + "  LV " + P.lvl, 16, 10, 1, "#fff");
+    drawText(g, P.name + "  LV " + P.lvl, 16, S === 2 ? 6 : 10, S, "#fff");
     bar(g, 16, 26, 200, 12, P.hp, P.maxHp, "#5aff8a", "#203020");
-    drawText(g, P.hp + "/" + P.maxHp, 224, 27, 1, "#fff");
+    drawText(g, P.hp + "/" + P.maxHp, 224, S === 2 ? 25 : 27, S, "#fff");
     drawText(g, "SCAN", 16, 48, 1, "#9ad");
     bar(g, 60, 48, 156, 8, this.gauge, 100, this.gauge >= 100 ? "#ffd700" : "#60a0d0", "#223");
     if (this.pBuff) drawText(g, "ATK+" + this.pBuff, 16, 62, 1, "#ffd700");
     /* enemy bar */
-    drawText(g, E.name, 800 - 16 - textWidth(E.name, 1), 10, 1, "#ff8a8a");
+    drawText(g, E.name, 800 - 16 - textWidth(E.name, S), S === 2 ? 6 : 10, S, "#ff8a8a");
     const ebw = 200;
     bar(g, 800 - 16 - ebw, 26, ebw, 12, E.hp, E.maxHp, "#ff6a6a", "#302020", true);
-    drawText(g, E.hp + "/" + E.maxHp, 800 - 16 - ebw - 58, 27, 1, "#fff");
+    const ehp = E.hp + "/" + E.maxHp;
+    drawText(g, ehp, 800 - 16 - ebw - 8 - textWidth(ehp, S), S === 2 ? 25 : 27, S, "#fff");
     if (this.eStunned) drawText(g, "DAZED!", 800 - 16 - textWidth("DAZED!", 1), 48, 1, "#ffd700");
 
     /* message */
     if (this.logT > 0 && this.log){
-      drawTextC(g, this.log, 400, 388, 1, "#fff", "#000");
+      const ls = (S === 2 && textWidth(this.log, 2) <= 780) ? 2 : 1;
+      drawTextC(g, this.log, 400, ls === 2 ? 380 : 388, ls, "#fff", "#000");
     }
     /* popups */
     for (const p of this.pops){
@@ -341,29 +344,55 @@ const Combat = {
     }
     if (this.subMenu >= 0){
       const ids = Object.keys(GAME.player.inv).filter(i => GAME.player.inv[i] > 0);
-      drawText(g, "USE GROCERY:", 24, 430, 1, "#9ad");
+      if (S === 1) drawText(g, "USE GROCERY:", 24, 430, 1, "#9ad");
       const show = ids.slice(this.scroll, this.scroll + 4);
       for (let i = 0; i < show.length; i++){
-        const id = show[i];
-        const y = 450 + i * 15;
+        const id = show[i], r = this.rowRect(i);
         const on = (this.scroll + i) === this.sel;
-        drawText(g, (on ? "> " : "  ") + ITEMS[id].name + " x" + GAME.player.inv[id] + " - " + ITEMS[id].desc, 24, y, 1, on ? "#ffd700" : "#ccc");
+        if (on && S === 2){ g.fillStyle = "rgba(255,215,0,0.12)"; g.fillRect(r[0] - 6, r[1] - 2, r[2], r[3]); }
+        const label = S === 2 ? ITEMS[id].name + " x" + GAME.player.inv[id] : ITEMS[id].name + " x" + GAME.player.inv[id] + " - " + ITEMS[id].desc;
+        drawText(g, (on ? "> " : "  ") + label, r[0], r[1], S, on ? "#ffd700" : "#ccc");
       }
-      if (this.scroll > 0) drawText(g, "^", 700, 450, 1, "#888");
-      if (this.scroll + 4 < ids.length) drawText(g, "v", 700, 495, 1, "#888");
-      drawText(g, "X: BACK", 640, 492, 1, "#888");
+      if (S === 2 && ids[this.sel]) drawText(g, ITEMS[ids[this.sel]].desc, 410, 436, 1, "#9ad");
+      if (this.scroll > 0) drawText(g, "^", 740, S === 2 ? 428 : 450, S, "#aaa");
+      if (this.scroll + 4 < ids.length) drawText(g, "v", 740, S === 2 ? 484 : 495, S, "#aaa");
+      drawText(g, S === 2 ? "BACK" : "X: BACK", S === 2 ? 640 : 640, S === 2 ? 466 : 492, S, "#888");
     } else if (this.turn === "player"){
       const opts = ["ATTACK","SPECIAL","ITEM","GUARD","FLEE"];
       const keys = ["1","2","3","4","5"];
       for (let i = 0; i < opts.length; i++){
-        const x = 60 + (i % 3) * 250, y = i < 3 ? 434 : 478;
-        const mark = i === this.sel ? ">" : " ";
-        const c = i === this.sel ? "#ffd700" : "#ccc";
-        drawText(g, mark + " " + keys[i] + ". " + opts[i], x, y, 1, c);
+        const [x, y] = this.optRect(i);
+        const on = i === this.sel;
+        drawText(g, (on ? "> " : "  ") + (S === 2 ? "" : keys[i] + ". ") + opts[i], x, y + (S === 2 ? 6 : 0), S, on ? "#ffd700" : "#ccc");
       }
-      drawText(g, "ARROWS + Z:OK  X:BACK   M:MUTE", 40, 498, 1, "#555");
+      if (S === 1) drawText(g, "ARROWS + Z:OK  X:BACK   M:MUTE", 40, 498, 1, "#555");
     } else {
-      drawTextC(g, "ENEMY TURN...", 400, 462, 1, "#888");
+      drawTextC(g, "ENEMY TURN...", 400, 462, S, "#888");
+    }
+  },
+
+  /* hit rectangles [x, y, w, h] shared by drawing and tapping */
+  optRect(i){
+    return GAME.big ? [40 + (i % 3) * 250, i < 3 ? 430 : 468, 240, 34] : [60 + (i % 3) * 250, i < 3 ? 434 : 478, 230, 30];
+  },
+  rowRect(i){
+    return GAME.big ? [30, 428 + i * 20, 560, 20] : [24, 450 + i * 15, 600, 15];
+  },
+  inRect(x, y, r){ return x >= r[0] && x <= r[0] + r[2] && y >= r[1] && y <= r[1] + r[3]; },
+  tap(x, y){
+    if (!this.active || this.over || this.turn !== "player") return;
+    if (this.subMenu >= 0){
+      const ids = Object.keys(GAME.player.inv).filter(i => GAME.player.inv[i] > 0);
+      if (x >= 620 && y >= 456 && x < 730){ this.handleKey("x"); return; }
+      if (x >= 730 && y < 456){ this.handleKey("up"); return; }
+      if (x >= 730 && y >= 456){ this.handleKey("down"); return; }
+      for (let i = 0; i < Math.min(4, ids.length - this.scroll); i++){
+        if (this.inRect(x, y, this.rowRect(i))){ this.sel = this.scroll + i; this.handleKey("z"); return; }
+      }
+      return;
+    }
+    for (let i = 0; i < 5; i++){
+      if (this.inRect(x, y, this.optRect(i))){ this.sel = i; this.confirm(); return; }
     }
   },
 

@@ -1,0 +1,14 @@
+{
+  "name": "Big Y Brawlers",
+  "short_name": "Big Y Brawlers",
+  "description": "Overhead pixel-art RPG set in the Northampton Big Y.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d0d10",
+  "theme_color": "#c40d3c",
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
